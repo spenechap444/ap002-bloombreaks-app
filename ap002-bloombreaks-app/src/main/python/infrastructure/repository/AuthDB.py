@@ -2,7 +2,7 @@ from DB import PostgresDB
 
 class authDB(PostgresDB):
     def __init__(self, timeout=30, max_retries=5):
-        super.__init__(timeout, max_retries)
+        super().__init__(timeout, max_retries)
 
     def fetch_user(self, p_email_i):
         query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s);'

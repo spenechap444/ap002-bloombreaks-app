@@ -40,13 +40,13 @@ class PostgresDB:
         if self.connection_pool is None:
             raise ValueError("Connection pool not initialized")
 
-        conn = self.connection_pool.acquire()
+        conn = self.connection_pool.getconn()
         try:
             print("Acquiring connection pool thread")
             # logging.info("Acquiring connection pool thread")
             yield conn
         finally:
-            self.connection_pool.release(conn)
+            self.connection_pool.putconn(conn)
 
     def fetch_proc(self, query, params):
         attempts = 1
