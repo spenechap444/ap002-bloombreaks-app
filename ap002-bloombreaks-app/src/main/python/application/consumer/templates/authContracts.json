@@ -1,0 +1,113 @@
+{
+  "login": {
+    "type": "object",
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "requestAction": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "userPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "userPassword"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "version"
+        ]
+      }
+    },
+    "required": [
+      "requestId",
+      "timestamp",
+      "requestAction",
+      "data",
+      "metadata"
+    ]
+  },
+  "emailValidate": {
+    "type": "object",
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "requestAction": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "securityCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "version"
+        ]
+      }
+    },
+    "required": [
+      "requestId",
+      "timestamp",
+      "requestAction",
+      "data",
+      "metadata"
+    ]
+  }
+}
+
+
+
+
+
+
