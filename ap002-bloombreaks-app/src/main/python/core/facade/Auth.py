@@ -1,17 +1,35 @@
-from .core.model import AuthModels
-from src.main.python.core.model.AuthModels import user, user_payment_map, user_address_map
 from ..model.AuthModels import users, user_payment_map, user_address_map
+from ...infrastructure.repository.AuthDB import authDB
+from werkzeug.security import generate_password_hash, check_password_hash
+import json
+from jsonschema import validate, ValidationError
+from types import SimpleNamespace
+from Base import BaseService
 
-class AuthService:
+class AuthService(BaseService):
     def __init__(self, db):
-        self.db = db
+        super().__init__(db)
 
-    def login(self, users):
-        # map the json contract to the users object
+    def login(self, request):
+        db = authDB()
+        user = self.login_user_map(request)
+        user_cred = db.fetch_user(user.email)
+        if user.user_password == user_cred['user_password']:
+            return user, None
+        elif user.email != user_cred['email']:
+            return None, 'Invalid email'
+        return None, 'Invalid password'
 
 
+    # map login request to DB object
+    def login_user_map(self, request):
+        f_request = self._dict_to_namespace(request)
+
+        user = users(email=f_request.properties.data.email,
+                     user_password = f_request.properties.data.userPassword)
+        return user
 # facade
-class AuthService:
+class AuthServiceV1:
     def __init__(self, db):
         self.db = db
 
