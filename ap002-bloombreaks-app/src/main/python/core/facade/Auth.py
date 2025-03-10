@@ -1,33 +1,61 @@
 from ..model.AuthModels import users, user_payment_map, user_address_map
 from ...infrastructure.repository.AuthDB import authDB
+from ...infrastructure.utils.emailUtil import Email
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from jsonschema import validate, ValidationError
 from types import SimpleNamespace
 from Base import BaseService
+import random
 
 class AuthService(BaseService):
     def __init__(self, db):
         super().__init__(db)
 
     def login(self, request):
-        db = authDB()
-        user = self.login_user_map(request)
-        user_cred = db.fetch_user(user.email)
+        f_request = self._dict_to_namespace(request)
+        user = users(email=f_request.properties.data.email,
+                     user_password = f_request.properties.data.userPassword)
+
+        user_cred = self.db.fetch_user(user.email)
         if user.user_password == user_cred['user_password']:
             return user, None
         elif user.email != user_cred['email']:
             return None, 'Invalid email'
         return None, 'Invalid password'
 
+    def send_email_validation(self, init_request, email_cd_mapping):
+        f_request = self._dict_to_namespace(init_request)
+        security_cd = ''
+        for i in range(6):
+            security_cd += str(random.randint(0, 9))
+        email_cd_mapping[f_request.properties.data.email] = security_cd
+        email = Email('snchapman4@gmail.com')
+        email_body = email.craft_validation_msg(security_cd)
+        email.send_mail(p_recip_i=f_request.properties.data.email,
+                        p_subject_i='Bloombreaks email validation',
+                        p_msgbody_i = email_body)
 
-    # map login request to DB object
-    def login_user_map(self, request):
-        f_request = self._dict_to_namespace(request)
-
+    def email_validation(self, validate_request, email_cd_mapping):
+        f_request = self._dict_to_namespace(validate_request)
         user = users(email=f_request.properties.data.email,
-                     user_password = f_request.properties.data.userPassword)
-        return user
+                     user_password=f_request.properties.data.userPassword)
+        if f_request.properties.data.securityCode != email_cd_mapping[f_request.properties.data.email]:
+            return None, 'Validation failed'
+        self.db.store_new_user(user)
+        return True, None
+
+    def email_dup_check(self, email_request):
+        f_request = self._dict_to_namespace(email_request)
+        user = users(email=f_request.properties.data.email)
+        user_cred = self.db_fetch_user(user.email)
+        if user_cred is None:
+            return True, None
+        return None, 'Email already existing'
+    
+    def rm_security_cd(self, cancel_request, email_cd_mapping):
+        f_request = self._dict_to_namespace(cancel_request)
+        del email_cd_mapping[f_request.properties.data.email]
 # facade
 class AuthServiceV1:
     def __init__(self, db):
