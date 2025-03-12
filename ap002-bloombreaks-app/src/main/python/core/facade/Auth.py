@@ -52,7 +52,7 @@ class AuthService(BaseService):
         if user_cred is None:
             return True, None
         return None, 'Email already existing'
-    
+
     def rm_security_cd(self, cancel_request, email_cd_mapping):
         f_request = self._dict_to_namespace(cancel_request)
         del email_cd_mapping[f_request.properties.data.email]
