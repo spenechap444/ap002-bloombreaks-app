@@ -1,4 +1,4 @@
-from DB import PostgresDB
+from main.python.infrastructure.repository.DB import PostgresDB
 
 class authDB(PostgresDB):
     def __init__(self, timeout=30, max_retries=5):

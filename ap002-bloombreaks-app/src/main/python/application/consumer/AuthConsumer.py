@@ -1,15 +1,45 @@
 from flask import Blueprint, render_template, request, jsonify
 from jsonschema import validate, ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
-from ...core.facade.Auth import AuthService
-from ...infrastructure.repository.AuthDB import authDB
+from main.python.core.facade.Auth import AuthService
+from main.python.infrastructure.repository.AuthDB import authDB
 import os
+import json
 
 # Create a blueprint for authentication-related routes
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 contract_template = open(os.path.join(os.path.dirname(__file__), 'templates/authContracts.json'))
+with open(os.path.join(os.path.dirname(__file__), 'templates/authContracts.json')) as f:
+    contract_template = json.load(f)
 
 @auth_bp.route('/register', methods=['POST'])
+def register():
+
+    # validation logic (modularize with decorator
+    payload = request.get_json()
+    if not payload:
+        return jsonify({
+            "status": "error",
+            "message": "Missing JSON payload"
+        }), 400
+
+    # Validate against the 'register' contract
+    try:
+        validate(instance=payload, schema=contract_template.get('register'))
+    except ValidationError as ve:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid JSON format",
+            "error": str(ve)
+        }), 400
+
+    # Process registration with AuthService
+    db = authDB()
+    auth = AuthService(db)
+
+
+
+@auth_bp.route('/email_validate', methods=['POST'])
 def validate_email():
     payload = request.get_json()
     if not payload:

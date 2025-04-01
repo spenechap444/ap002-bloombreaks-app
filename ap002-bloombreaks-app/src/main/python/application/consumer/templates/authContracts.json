@@ -1,5 +1,5 @@
 {
-  "login": {
+  "loginRequest": {
     "type": "object",
     "properties": {
       "requestId": {
@@ -52,7 +52,7 @@
       "metadata"
     ]
   },
-  "emailValidate": {
+  "emailValidateRequest": {
     "type": "object",
     "properties": {
       "requestId": {
@@ -72,12 +72,16 @@
             "type": "string",
             "format": "email"
           },
+          "password": {
+            "type": "string"
+          },
           "securityCode": {
             "type": "string"
           }
         },
         "required": [
-          "email"
+          "email",
+          "password"
         ]
       },
       "metadata": {

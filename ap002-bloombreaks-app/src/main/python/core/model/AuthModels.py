@@ -10,6 +10,9 @@ class users(db.Model):
     user_password = db.Column(db.String(64), nullable=False)
     bio = db.Column(db.String(300))
     account_id = db.Column(db.String(64), primary_key=True)
+    notifications = db.Column(db.Boolean)
+    join_date = db.Column(db.Date, nullable=False)
+    phone_nbr = db.Column(db.String(15))
 
 class user_payment_map(db.Model):
     account_id = db.Column(db.String(64), primary_key=True)
