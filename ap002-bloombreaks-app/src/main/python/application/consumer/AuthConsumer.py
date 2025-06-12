@@ -87,6 +87,11 @@ def fetch_auth():
             "email": user.email,
             "userPassword": user.userPassword
         })
+    else:
+        return jsonify({"status": "error",
+                        "message": "Login information not found",
+                        "error": None
+                    }), 400
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
