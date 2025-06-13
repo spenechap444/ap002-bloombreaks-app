@@ -15,7 +15,7 @@ ENV FLASK_ENV=${FLASK_ENV} \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-WORKDIR /app
+WORKDIR /app/src/main/python
 
 #4. Install Python deps
 COPY requirements.txt .
@@ -36,5 +36,11 @@ HEALTHCHECK --interval=30s --timeout=5s \
 # CMD ["gunicorn", "wsgi:application", "--workers", "3", "--bind", "0.0.0.0:8000"]
 
 #8. Execute with runtime args
+
+# default env-vars (can be overridden at runtime with -e)
+ENV HOST=0.0.0.0 \
+    PORT=8000
+
+# single CMD that launches your app and lets Docker expand $HOST, etc.
 ENTRYPOINT ["python", "main.py"]
 CMD ["--host", "0.0.0.0", "--port", "8000"]

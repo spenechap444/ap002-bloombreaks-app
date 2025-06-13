@@ -1,7 +1,5 @@
 Flask-SQLAlchemy
 flask==3.1.0
-json
-werkzeug<2.1
-random
-sys
-os
+werkzeug
+psycopg2==2.9.6
+jsonschema==4.23.0
