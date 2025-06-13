@@ -1,11 +1,7 @@
-from ..model.AuthModels import users, user_payment_map, user_address_map
-from ...infrastructure.repository.AuthDB import authDB
-from ...infrastructure.utils.emailUtil import Email
+from model.AuthModels import users
+from model.infrastructure.utils.emailUtil import Email
 from werkzeug.security import generate_password_hash, check_password_hash
-import json
-from jsonschema import validate, ValidationError
-from types import SimpleNamespace
-from main.python.core.facade.Base import BaseService
+from Base import BaseService
 import random
 
 class AuthService(BaseService):
