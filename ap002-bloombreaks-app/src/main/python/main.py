@@ -1,11 +1,10 @@
 from flask import Flask
-from main.python.infrastructure.repository.DB import PostgresDB
-from main.python.infrastructure.repository.AuthDB import authDB
-from main.python.infrastructure.configuration import initParams as c
+from infrastructure.repository.DB import PostgresDB
+from infrastructure.configuration import initParams as c
 import argparse
 import os
 import json
-from main.python.application.consumer import AuthConsumer # Modify to import specific blueprints
+from application.consumer import AuthConsumer # Modify to import specific blueprints
 
 # function for creating database credential mappings
 # def parse_creds():
