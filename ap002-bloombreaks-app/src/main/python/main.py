@@ -43,5 +43,3 @@ def create_app(config_name='development'):
 if __name__ == '__main__':
     app = create_app('development')
     app.run(debug=True)
-
-    

@@ -1,0 +1,7 @@
+Flask-SQLAlchemy
+flask==3.1.0
+json
+werkzeug<2.1
+random
+sys
+os

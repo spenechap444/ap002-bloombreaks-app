@@ -16,7 +16,9 @@ class Config:
         parser = argparse.ArgumentParser(
             description='Performing validation on API spin up'
         )
-        parser.add_argument('--username', type=str, help='Database username')
+        parser.add_argument('--host', type=str)
+        parser.add_argument('--port', type=str)
+        parser.add_argument('--db_username', type=str, help='Database username')
         parser.add_argument('--db_password', type=str, help='Database password')
         args = parser.parse_args()
 
