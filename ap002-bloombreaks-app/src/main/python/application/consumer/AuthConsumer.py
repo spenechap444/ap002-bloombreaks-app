@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from jsonschema import validate, ValidationError
-from werkzeug.security import generate_password_hash, check_password_hash
-from ...core.facade.Auth import AuthService
-from ...infrastructure.repository.AuthDB import authDB
+from core.facade.Auth import AuthService
+from core.facade.model.infrastructure.repository.AuthDB import authDB
 import os
 import json
 

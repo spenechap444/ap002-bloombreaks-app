@@ -11,9 +11,9 @@
   <component name="PyNamespacePackagesService">
     <option name="namespacePackageFolders">
       <list>
-        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/core/model" />
-        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/core" />
-        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/infrastructure/repository" />
+        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/application/consumer/core/facade/model" />
+        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/application/consumer/core" />
+        <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/application/consumer/core/facade/model/infrastructure/repository" />
         <option value="$MODULE_DIR$/ap002-bloombreaks-app/src/main/python/application" />
       </list>
     </option>

@@ -2,7 +2,6 @@ import json
 import argparse
 import os
 
-
 class Config:
 
     def __init__(self):
@@ -24,7 +23,7 @@ class Config:
 
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as f:
             db_creds = json.load(f)['DB']
-            db_creds['user'] = args.username
+            db_creds['user'] = args.db_username
             db_creds['password'] = args.db_password
 
         return db_creds
