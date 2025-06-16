@@ -88,7 +88,7 @@ def fetch_auth():
     if user is not None:
         return jsonify({
             "email": user.email,
-            "userPassword": user.userPassword
+            "userPassword": user.user_password
         }), 200
     else:
         return jsonify({"status": "error",

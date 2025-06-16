@@ -7,8 +7,12 @@ class authDB(PostgresDB):
     def fetch_user(self, p_email_i):
         query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s);'
 
-        p_cur_o = self.fetch_proc(query, p_email_i,)
-        return p_cur_o.fetchone() # first row as dict obj
+        result = self.fetch_proc(query, p_email_i)
+        print(result)
+        if isinstance(result, list) and result:
+            return result[0] # First row
+        else:
+            return None
 
     def insert_user_account_payment(self, user_pmt_type):
         query = 'CALL account_api_dbo.aip_add_user_payment(%s, %s, %s, %s, %s, %s, %s, %s);'

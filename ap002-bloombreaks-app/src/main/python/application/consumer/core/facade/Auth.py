@@ -10,14 +10,22 @@ class AuthService(BaseService):
     #fetches user authentication
     def login(self, request):
         f_request = self._dict_to_namespace(request)
-        user = users(email=f_request.properties.data.email,
-                     user_password = f_request.properties.data.userPassword)
+        user = users(email=f_request.data.email,
+                     user_password = f_request.data.userPassword)
 
-        user_cred = self.db.fetch_user(user.email)
-        if user.user_password == user_cred['user_password']:
+        user_cred = self.db.fetch_user(user.email) # returned as tuple in 1 element list
+        user_email = user_cred[3]
+        print('user email from DB: ', user_email)
+        user_password = user_cred[4] # password is 5th element
+        print('user password from DB: ', user_password)
+        if user.user_password == user_password:
+            print('Password checks out')
             return user, None
-        elif user.email != user_cred['email']:
+
+        elif user.email != user_email:
+            print('Email checks out')
             return None, 'Invalid email'
+        print('Nothing checks out')
         return None, 'Invalid password'
 
     #produces an email
@@ -27,19 +35,19 @@ class AuthService(BaseService):
         for i in range(6):
             security_cd += str(random.randint(0, 9))
         #store security code against email
-        email_cd_mapping[f_request.properties.data.email] = security_cd
+        email_cd_mapping[f_request.data.email] = security_cd
         email = Email('snchapman4@gmail.com')
         email_body = email.craft_validation_msg(security_cd)
-        email.send_mail(p_recip_i=f_request.properties.data.email,
+        email.send_mail(p_recip_i=f_request.data.email,
                         p_subject_i='Bloombreaks email validation',
                         p_msgbody_i = email_body)
 
 
     def email_validation(self, emailValidateReq, email_cd_mapping):
         f_request = self._dict_to_namespace(emailValidateReq)
-        user = users(email=f_request.properties.data.email,
-                     user_password=f_request.properties.data.userPassword)
-        if f_request.properties.data.securityCode != email_cd_mapping[f_request.properties.data.email]:
+        user = users(email=f_request.data.email,
+                     user_password=f_request.data.userPassword)
+        if f_request.data.securityCode != email_cd_mapping[f_request.data.email]:
             return None, 'Validation failed'
         # store new user in the database
         self.db.store_new_user(user)
@@ -47,7 +55,7 @@ class AuthService(BaseService):
 
     def email_dup_check(self, email_request):
         f_request = self._dict_to_namespace(email_request)
-        user = users(email=f_request.properties.data.email)
+        user = users(email=f_request.data.email)
         user_cred = self.db_fetch_user(user.email)
         if user_cred is None:
             return True, None
@@ -55,7 +63,7 @@ class AuthService(BaseService):
 
     def rm_security_cd(self, cancel_request, email_cd_mapping):
         f_request = self._dict_to_namespace(cancel_request)
-        del email_cd_mapping[f_request.properties.data.email]
+        del email_cd_mapping[f_request.data.email]
 # facade
 class AuthServiceV1:
     def __init__(self, db):

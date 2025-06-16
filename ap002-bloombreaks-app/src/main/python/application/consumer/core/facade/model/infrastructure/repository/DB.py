@@ -54,7 +54,7 @@ class PostgresDB:
             try:
                 with self.get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(query, params)
+                    cursor.execute(query, (params,))
                     return cursor.fetchall()
             except psycopg2.DatabaseError as e:
                 print(f'Database error encountered when fetching data for {query} and {params}: {e}')
