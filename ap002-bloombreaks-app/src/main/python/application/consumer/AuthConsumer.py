@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from jsonschema import validate, ValidationError
-from core.facade.Auth import AuthService
-from core.facade.model.infrastructure.repository.AuthDB import authDB
+from application.consumer.core.facade.Auth import AuthService
+from application.consumer.core.facade.model.infrastructure.repository.AuthDB import authDB
 import os
 import json
 
@@ -71,7 +71,8 @@ def fetch_auth():
     payload = request.get_json()
 
     try:
-        validate(instance=payload)
+        validate(instance=payload, schema=contract_template.get('loginRequest'))
+        print('Login request validated successfully..')
     except ValidationError as ve:
         return jsonify({"status": "error",
             "message": "Invalid JSON format",
@@ -81,25 +82,16 @@ def fetch_auth():
     db = authDB()
     auth = AuthService(db)
     user, err_msg = auth.login(payload)
+    print('User:', user)
+    print('err_msg:', err_msg)
+
     if user is not None:
         return jsonify({
             "email": user.email,
             "userPassword": user.userPassword
-        })
+        }), 200
     else:
         return jsonify({"status": "error",
                         "message": "Login information not found",
                         "error": None
                     }), 400
-
-@auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        # Process login logic here
-        return jsonify({'message': 'Logged in successfully'})
-    return render_template('login.html')
-
-@auth_bp.route('/register', methods=['POST'])
-def register():
-    # Process registration logic here
-    return jsonify({'message': 'User registered successfully'})

@@ -1,6 +1,7 @@
 from flask import Flask
 from application.consumer.core.facade.model.infrastructure.repository.DB import PostgresDB
 from application.consumer.core.facade.model.infrastructure.configuration import initParams as c
+from application.consumer.AuthConsumer import auth_bp
 
 
 # function for creating database credential mappings
@@ -33,9 +34,16 @@ def create_app(config_name='development'):
 
     cnn = config.db_creds
     PostgresDB.initialize_pool(cnn)
+
+    app.register_blueprint(auth_bp)
+
+    @app.route("/ping")
+    def ping():
+        return "pong", 200
+
     return app
 
 # For local testing, we can run the app directly
 if __name__ == '__main__':
     app = create_app('development')
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)

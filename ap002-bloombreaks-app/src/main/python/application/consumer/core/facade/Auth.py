@@ -1,7 +1,7 @@
-from model.AuthModels import users
-from model.infrastructure.utils.emailUtil import Email
+from application.consumer.core.facade.model.AuthModels import users
+from application.consumer.core.facade.model.infrastructure.utils.emailUtil import Email
 from werkzeug.security import generate_password_hash, check_password_hash
-from Base import BaseService
+from application.consumer.core.facade.Base import BaseService
 import random
 
 class AuthService(BaseService):
