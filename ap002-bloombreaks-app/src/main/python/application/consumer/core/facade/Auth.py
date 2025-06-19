@@ -74,7 +74,9 @@ class AuthService(BaseService):
                      user_password = f_request.data.userPassword)
 
         user.user_password = generate_password_hash(user.user_password)
+        user.account_id = generate_password_hash(user.email)
         return_cd = self.db.store_new_user(user)
+        return return_cd
 
 # facade
 class AuthServiceV1:

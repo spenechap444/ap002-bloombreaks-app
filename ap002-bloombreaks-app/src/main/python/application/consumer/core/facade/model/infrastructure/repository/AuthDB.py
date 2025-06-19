@@ -56,7 +56,7 @@ class authDB(PostgresDB):
                   user_type.last_name,
                   user_type.user_name,
                   user_type.email,
-                  user_type.user_passwword,
+                  user_type.user_password,
                   user_type.bio,
                   user_type.account_id,
                   user_type.notifications)

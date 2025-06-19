@@ -24,7 +24,7 @@ def register():
 
     # Validate against the 'register' contract
     try:
-        validate(instance=payload, schema=contract_template.get('register'))
+        validate(instance=payload, schema=contract_template.get('loginRequest'))
     except ValidationError as ve:
         return jsonify({
             "status": "error",
@@ -35,6 +35,13 @@ def register():
     # Process registration with AuthService
     db = authDB()
     auth = AuthService(db)
+
+    auth.register(payload)
+
+    return jsonify({
+        "status": "success",
+        "message": "account created successfully"
+    }), 200
 
 @auth_bp.route('/emailDupCheck', methods=['POST'])
 def emailDupCheck():
@@ -58,7 +65,7 @@ def emailDupCheck():
     db = authDB()
     auth = AuthService(db)
     # service level implementation for checking email
-    found_flag, msg = auth.emailDupCheck(payload)
+    found_flag, msg = auth.email_dup_check(payload)
 
     return jsonify({
         "status": "success",
