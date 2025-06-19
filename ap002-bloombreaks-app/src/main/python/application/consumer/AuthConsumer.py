@@ -36,7 +36,35 @@ def register():
     db = authDB()
     auth = AuthService(db)
 
+@auth_bp.route('/emailDupCheck', methods=['POST'])
+def emailDupCheck():
+    payload = request.get_json()
+    if not payload:
+        return jsonify({
+            "status": "error",
+            "message": "Missing JSON payload"
+        }), 400
 
+    # Validate the payload against the template
+    try:
+        validate(instance=payload, schema=contract_template['emailDupCheck'])
+    except ValidationError as ve:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid JSON format",
+            "error": str(ve)
+        }), 400
+
+    db = authDB()
+    auth = AuthService(db)
+    # service level implementation for checking email
+    found_flag, msg = auth.emailDupCheck(payload)
+
+    return jsonify({
+        "status": "success",
+        "flag": found_flag,
+        "message": msg
+    }), 200
 
 @auth_bp.route('/email_validate', methods=['POST'])
 def validate_email():
@@ -59,12 +87,15 @@ def validate_email():
 
     db = authDB()
     auth = AuthService(db)
-    user, err_msg = auth.login(payload)
-    return jsonify({
-        "status": "success",
-        "data": payload,
-        "message": "User registration validated and processed"
-    }), 200
+
+    # found_flag, msg = auth.emailDupCheck(payload)
+    #
+    #
+    # return jsonify({
+    #     "status": "success",
+    #     "flag": found_flag,
+    #     "message": msg
+    # }), 200
 
 @auth_bp.route('/login', methods=['POST'])
 def fetch_auth():
@@ -85,6 +116,8 @@ def fetch_auth():
     print('User:', user)
     print('err_msg:', err_msg)
 
+
+    # Need to modify this to a uniform contract for the caller
     if user is not None:
         return jsonify({
             "email": user.email,

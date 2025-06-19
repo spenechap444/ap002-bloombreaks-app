@@ -52,6 +52,55 @@
       "metadata"
     ]
   },
+  "emailDupCheck": {
+    "type": "object",
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "requestAction": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "version"
+        ]
+      }
+    },
+    "required": [
+      "requestId",
+      "timestamp",
+      "requestAction",
+      "data",
+      "metadata"
+    ]
+  },
   "emailValidateRequest": {
     "type": "object",
     "properties": {

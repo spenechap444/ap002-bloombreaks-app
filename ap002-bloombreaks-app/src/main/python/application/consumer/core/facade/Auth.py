@@ -16,7 +16,7 @@ class AuthService(BaseService):
         user_cred = self.db.fetch_user(user.email) # returned as tuple in 1 element list
         user_email = user_cred[3]
         print('user email from DB: ', user_email)
-        user_password = user_cred[4] # password is 5th element
+        user_password = generate_password_hash(user_cred[4]) # password is 5th element
         print('user password from DB: ', user_password)
         if user.user_password == user_password:
             print('Password checks out')
@@ -56,14 +56,26 @@ class AuthService(BaseService):
     def email_dup_check(self, email_request):
         f_request = self._dict_to_namespace(email_request)
         user = users(email=f_request.data.email)
-        user_cred = self.db_fetch_user(user.email)
+        print(f'User email checking for duplicate: {user.email}')
+        user_cred = self.db.fetch_user(user.email)
         if user_cred is None:
-            return True, None
-        return None, 'Email already existing'
+            print('No existing email found.')
+            return False, 'No existing email found'
+        print(f'Email {user.email} already exists')
+        return True, 'Email already existing'
 
     def rm_security_cd(self, cancel_request, email_cd_mapping):
         f_request = self._dict_to_namespace(cancel_request)
         del email_cd_mapping[f_request.data.email]
+
+    def register(self, registerRequest):
+        f_request = self._dict_to_namespace(registerRequest)
+        user = users(email=f_request.data.email,
+                     user_password = f_request.data.userPassword)
+
+        user.user_password = generate_password_hash(user.user_password)
+        return_cd = self.db.store_new_user(user)
+
 # facade
 class AuthServiceV1:
     def __init__(self, db):

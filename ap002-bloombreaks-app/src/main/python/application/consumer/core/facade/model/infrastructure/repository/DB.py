@@ -75,6 +75,7 @@ class PostgresDB:
                 with self.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute(query, params)
+                    cursor.execute('COMMIT;')
                     return 0 # success
             except psycopg2.DatabaseError as e:
                 print(f'Database error encountered for {query} and {params}: {e}')
