@@ -15,10 +15,8 @@ class AuthService(BaseService):
 
         user_cred = self.db.fetch_user(user.email) # returned as tuple in 1 element list
         user_email = user_cred[3]
-        print('user email from DB: ', user_email)
-        user_password = generate_password_hash(user_cred[4]) # password is 5th element
-        print('user password from DB: ', user_password)
-        if user.user_password == user_password:
+        user_password = user_cred[4] # password is 5th element
+        if check_password_hash(user_password, user.user_password):
             print('Password checks out')
             return user, None
 
