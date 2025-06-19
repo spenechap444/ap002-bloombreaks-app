@@ -30,7 +30,7 @@ USER appuser
 #7. Expose & healthcheck
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s \
-   CMD curl -f http://localhost:8000/health || exit 1
+   CMD curl -f http://localhost:8000/ping || exit 1
 
 # For Gunicorn:
 # CMD ["gunicorn", "wsgi:application", "--workers", "3", "--bind", "0.0.0.0:8000"]
