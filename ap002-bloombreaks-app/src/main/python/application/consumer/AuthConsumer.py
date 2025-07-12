@@ -54,7 +54,7 @@ def emailDupCheck():
 
     # Validate the payload against the template
     try:
-        validate(instance=payload, schema=contract_template['emailDupCheck'])
+        validate(instance=payload, schema=contract_template['loginRequest'])
     except ValidationError as ve:
         return jsonify({
             "status": "error",
@@ -67,11 +67,20 @@ def emailDupCheck():
     # service level implementation for checking email
     found_flag, msg = auth.email_dup_check(payload)
 
-    return jsonify({
-        "status": "success",
-        "flag": found_flag,
-        "message": msg
-    }), 200
+    if found_flag:
+        return jsonify({
+            "status": "failure",
+            "flag": found_flag,
+            "message": msg
+        }), 400
+    else:
+        # creating the account
+        auth.register(payload)
+        return jsonify({
+            "status": "success",
+            "flag": found_flag,
+            "message": msg
+        }), 200
 
 @auth_bp.route('/email_validate', methods=['POST'])
 def validate_email():
