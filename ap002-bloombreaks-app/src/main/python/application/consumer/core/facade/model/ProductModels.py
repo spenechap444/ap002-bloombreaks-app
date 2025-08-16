@@ -3,7 +3,7 @@ from sqlalchemy import Numeric
 
 db = SQLAlchemy()
 
-class Product(db.Model):
+class ProductTbl(db.Model):
     __tablename__ = 'CARD_PRODUCT'
     __schemaname__ = 'PRODUCT_DBO'
     product_id = db.Column(db.String(300), nullable=False)
@@ -30,7 +30,7 @@ class Product(db.Model):
     sealed = db.Column(db.Boolean)
     is_active = db.Column(db.Boolean, nullable=False)
 
-class SportCard(db.Model):
+class SportCardTbl(db.Model):
     __tablename__ = 'SPORTS_CARDS'
     __schemaname__ = 'PRODUCT_DBO'
     card_id = db.Column(db.String(300), nullable=False)
@@ -51,6 +51,19 @@ class SportCard(db.Model):
     cost_price = db.Column(Numeric(10, 2))
     sale_price = db.Column(Numeric(10, 2))
 
-
-
+class sportCardFilter(db.Model):
+    rookie_flag = db.Column(db.Boolean)
+    auto_flag = db.Column(db.Boolean)
+    patch_flag = db.Column(db.Boolean)
+    team_name = db.Column(db.String(60))
+    numbered_flag = db.Column(db.Boolean)
+    sport_card_type_cd = db.Column(db.String(30))
+    product_cd = db.Column(db.String(30))
+    variant_flag = db.Column(db.Boolean)
+    grade_cd = db.Column(db.String(30))
+    grade_score = db.Column(Numeric(precision=3, scale=1))
+    min_price = db.Column(Numeric(precision=10, scale=2))
+    max_price = db.Column(Numeric(precision=10, scale=2))
+    limit = db.Column(db.Integer)
+    offset = db.Column(db.Integer)
 
