@@ -2,6 +2,7 @@ from flask import Flask
 from application.consumer.core.facade.model.infrastructure.repository.DB import PostgresDB
 from application.consumer.core.facade.model.infrastructure.configuration import initParams as c
 from application.consumer.AuthConsumer import auth_bp
+from application.consumer.TextConsumer import text_bp
 
 
 # function for creating database credential mappings
@@ -36,6 +37,7 @@ def create_app(config_name='development'):
     PostgresDB.initialize_pool(cnn)
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(text_bp)
 
     @app.route("/ping")
     def ping():
