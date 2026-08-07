@@ -53,7 +53,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--url', default='https://sinner-booted-unpainted.ngrok-free.dev/text/promotion')
     p.add_argument('--email', default='bloomshobbyshop@gmail.com', help='Login email (must exist in the DB)')
-    p.add_argument('--password', default='Wolfpack#55', help='Login password for that user')
+    p.add_argument('--password', help='Login password for that user')
     p.add_argument('--message', default='Test promotional message... it is beginning...',
                    help='The SMS body sent to every active subscriber')
     args = p.parse_args()
