@@ -35,9 +35,9 @@ def send_promotion():
 
     auth_db = authDB()
     auth = AuthService(auth_db)
-    user, err_msg = auth.login(payload)
+    user, err_msg = auth.login(payload, admin_check=True)
     if user is None:
-        return jsonify({
+        return jsonify({    
             "status": "error",
             "message": err_msg or "Unauthorized"
         }), 401

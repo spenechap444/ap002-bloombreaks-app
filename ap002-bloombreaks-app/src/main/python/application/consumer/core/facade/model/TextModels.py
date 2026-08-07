@@ -8,6 +8,7 @@ class text_subscribers(db.Model):
     __schemaname__ = 'RECORDS_DBO'
     phone_number = db.Column(db.String(20), nullable=False, primary_key=True)
     status_cd = db.Column(db.String(10), nullable=False)  # ACTIVE, INACTIVE
+    admin_flag = db.Column(db.String(1), nullable=False)  # Y, N
     create_id = db.Column(db.String(30), nullable=False)
     create_ts = db.Column(db.DateTime, nullable=False)
     update_id = db.Column(db.String(30))

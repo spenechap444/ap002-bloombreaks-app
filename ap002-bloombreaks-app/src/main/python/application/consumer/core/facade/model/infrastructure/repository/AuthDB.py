@@ -4,10 +4,13 @@ class authDB(PostgresDB):
     def __init__(self, timeout=30, max_retries=5):
         super().__init__(timeout, max_retries)
 
-    def fetch_user(self, p_email_i):
-        query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s);'
+    def fetch_user(self, p_email_i, p_admin_flag_i=None):
+        query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s, %s);'
 
-        result = self.fetch_proc(query, p_email_i)
+        # Never print the raw row - it contains the password hash, and stdout
+        # ends up in CloudWatch once deployed.
+        params = (p_email_i, p_admin_flag_i)
+        result = self.fetch_proc(query, params)
         print(result)
         if isinstance(result, list) and result:
             return result[0] # First row

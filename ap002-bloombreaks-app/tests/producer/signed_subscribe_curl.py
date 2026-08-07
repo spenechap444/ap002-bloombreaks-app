@@ -64,7 +64,7 @@ def build_payload(from_number, text, to_number):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--url', default='https://sinner-booted-unpainted.ngrok-free.dev/text/webhook')
-    p.add_argument('--from-number', default='+18604055257')
+    p.add_argument('--from-number', default='+18609495474')
     p.add_argument('--to-number', default='+14012508015')
     p.add_argument('--text', default='YES', help='YES to subscribe, STOP to unsubscribe')
     args = p.parse_args()

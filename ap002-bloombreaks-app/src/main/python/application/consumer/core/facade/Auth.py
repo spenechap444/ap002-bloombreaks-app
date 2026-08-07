@@ -8,14 +8,29 @@ class AuthService(BaseService):
     def __init__(self, db):
         super().__init__(db)
     #fetches user authentication
-    def login(self, request):
+
+    def login(self, request, admin_check=False):
         f_request = self._dict_to_namespace(request)
         user = users(email=f_request.data.email,
                      user_password = f_request.data.userPassword)
 
         user_cred = self.db.fetch_user(user.email) # returned as tuple in 1 element list
+        if user_cred is None:
+            # Unknown email - without this check user_cred[3] raises and the
+            # endpoint 500s instead of returning a clean auth failure.
+            return None, 'Invalid email'
         user_email = user_cred[3]
         user_password = user_cred[4] # password is 5th element
+
+        # required for any admin functionality
+        if admin_check:
+            admin_flag = user_cred[10]
+            if admin_flag != 'Y':
+                print(f'Admin login rejected for {user_email} - not an admin')
+                return None, 'User is not an admin'
+            else:
+                print(f'Admin login accepted for {user_email}')
+
         if check_password_hash(user_password, user.user_password):
             print('Password checks out')
             return user, None

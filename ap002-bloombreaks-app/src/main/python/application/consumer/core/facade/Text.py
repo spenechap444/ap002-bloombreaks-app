@@ -64,6 +64,12 @@ class TextService(BaseService):
     def send_promotion(self, promotion_request):
         f_request = self._dict_to_namespace(promotion_request)
         subscribers = self.db.fetch_sms_subscribers()
+        # Zero subscribers is the silent-failure trap: without this log an empty
+        # fetch (no active rows, or a NULL admin_flag filtering everything out)
+        # looks identical to a real send.
+        print(f'Fetched {len(subscribers)} active subscriber(s) for promotion')
+        if not subscribers:
+            return False, 'No active subscribers found - nothing sent'
         failed = []
         for number in subscribers:
             try:
@@ -106,7 +112,8 @@ class TextService(BaseService):
         # Telnyx's payload key is literally "from", which is a reserved word
         # in Python, so dot-notation (.from_) can't reach it - getattr is required.
         from_number = getattr(f_payload.data.payload, 'from').phone_number
-        message_body = f_payload.data.payload.text.strip().upper()
+        raw_text = f_payload.data.payload.text.strip()
+        message_body = raw_text.upper()
         print(f'Inbound SMS from {from_number}: {message_body}')
 
         if message_body == 'YES':
@@ -115,5 +122,58 @@ class TextService(BaseService):
         elif message_body == 'STOP':
             success, msg = self.unsubscribe(from_number)
             print(f'Unsubscribe result for {from_number}: {success} - {msg}')
+        elif message_body.startswith('PROMO'):
+            # Pass raw_text, not the uppercased copy - the promotion message
+            # should go out with its original casing.
+            self._handle_admin_promo(from_number, raw_text)
         else:
             print(f'No matching keyword for "{message_body}" from {from_number} - ignoring')
+
+    # TODO: This can be deleted if promotion feature is built and this is forgotten
+    # def _validate_admin(self, payload):
+    #     # Admin-only: authenticate a promotion request by checking the email
+    #     # admin flag and password in the DB. This is a separate auth path from the Telnyx webhook signature.
+    #     f_payload = self._dict_to_namespace(payload)
+    #     email = f_payload.data.email
+    #     user_password = f_payload.data.userPassword
+
+    #     # user_cred = self.db.fetch_user(email)
+    #     admin_flag = self.db.fetch_sms_subscribers(admin_flag='Y')
+    #     if not admin_flag:
+    #         print(f'Admin promo rejected, user is not stored as admin')
+
+
+    #     if not user_cred or user_cred.password != user_password:
+    #         print(f'Admin promo rejected: invalid credentials for {email}')
+    #         return False
+        
+
+
+    def _handle_admin_promo(self, from_number, raw_text):
+        # Admin-only: broadcast a promotion by texting "PROMO <pin> <message>"
+        # to our Telnyx number. Three auth layers, checked in order:
+        #   1. Webhook Ed25519 signature (already verified upstream) - proves the
+        #      event really came through Telnyx, so it can't be forged via curl.
+        #   2. Sender allowlist - only numbers in ADMIN_PHONE_NUMBERS may trigger.
+        #   3. Shared PIN in the message body - guards against SMS sender spoofing.
+        admins = self.db.fetch_sms_subscribers(admin_flag='Y')
+
+        # Check if the sender is in the admin list
+        is_admin = False
+        for number in admins:
+            is_admin = True if number == from_number else is_admin
+
+        if not is_admin:
+            print(f'PROMO rejected: {from_number} is not an admin')
+            return
+        pin = os.environ.get('ADMIN_SMS_PIN')
+        parts = raw_text.split(maxsplit=2)  # ["PROMO", "<pin>", "<message>"]
+        if not pin:
+            print('PROMO rejected: ADMIN_SMS_PIN is not configured')
+            return
+        if len(parts) < 3 or parts[1] != pin:
+            print(f'PROMO rejected: bad or missing PIN from {from_number}')
+            return
+
+        success, msg = self.send_promotion({'data': {'message': parts[2]}})
+        print(f'Admin promo from {from_number}: {success} - {msg}')
