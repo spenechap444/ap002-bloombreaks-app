@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from datetime import datetime, timezone
 
 class BaseService:
     def __init__(self, db):
@@ -11,3 +12,8 @@ class BaseService:
         elif isinstance(request, list):
             return [self._dict_to_namespace(i) for i in request]
         return request
+
+    def _get_current_timestamp(self):
+        return datetime.now(timezone.utc)
+    
+    

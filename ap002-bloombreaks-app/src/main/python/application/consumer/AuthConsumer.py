@@ -129,18 +129,18 @@ def fetch_auth():
     db = authDB()
     auth = AuthService(db)
     user, err_msg = auth.login(payload)
-    print('User:', user)
-    print('err_msg:', err_msg)
 
-
-    # Need to modify this to a uniform contract for the caller
+    # Never echo credentials back to the caller (or into logs) - the client
+    # already knows what it submitted; it only needs to know whether it worked.
     if user is not None:
         return jsonify({
-            "email": user.email,
-            "userPassword": user.user_password
+            "status": "success",
+            "message": "Login successful"
         }), 200
     else:
-        return jsonify({"status": "error",
-                        "message": "Login information not found",
-                        "error": None
-                    }), 400
+        # Deliberately generic: don't reveal whether the email or the password
+        # was wrong, and use 401 (unauthorized) rather than 400 (bad request).
+        return jsonify({
+            "status": "error",
+            "message": "Invalid credentials"
+        }), 401

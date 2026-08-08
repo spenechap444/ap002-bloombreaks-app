@@ -4,10 +4,13 @@ class authDB(PostgresDB):
     def __init__(self, timeout=30, max_retries=5):
         super().__init__(timeout, max_retries)
 
-    def fetch_user(self, p_email_i):
-        query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s);'
+    def fetch_user(self, p_email_i, p_admin_flag_i=None):
+        query = 'SELECT * FROM account_api_dbo.aip_fetch_user(%s, %s);'
 
-        result = self.fetch_proc(query, p_email_i)
+        # Never print the raw row - it contains the password hash, and stdout
+        # ends up in CloudWatch once deployed.
+        params = (p_email_i, p_admin_flag_i)
+        result = self.fetch_proc(query, params)
         print(result)
         if isinstance(result, list) and result:
             return result[0] # First row
@@ -38,8 +41,8 @@ class authDB(PostgresDB):
         return p_return_cd_o
 
     def update_user_info(self, user_type): # omitting email from update
-        query = 'CALL account_api_dbo.aip_update_user_info(%s, %s, %s, %s, %s, %s);'
-        params = (user_type.account_id,
+        query = 'CALL account_api_dbo.aip_update_user_info(%s, %s, %s, %s, %s, %s, %s, %s);'
+        params = (user_type.email,
                   user_type.first_name,
                   user_type.last_name,
                   user_type.user_name,
@@ -51,7 +54,7 @@ class authDB(PostgresDB):
         return p_return_cd_o
 
     def store_new_user(self, user_type):
-        query = 'CALL account_api_dbo.aip_store_new_user(%s, %s, %s, %s, %s, %s, %s, %s);'
+        query = 'CALL account_api_dbo.aip_store_new_user(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);'
         params = (user_type.first_name,
                   user_type.last_name,
                   user_type.user_name,
@@ -59,7 +62,9 @@ class authDB(PostgresDB):
                   user_type.user_password,
                   user_type.bio,
                   user_type.account_id,
-                  user_type.notifications)
+                  user_type.notifications,
+                  user_type.phone_nbr,
+                  user_type.admin_flag)
 
         p_return_cd_o = self.store_proc(query, params)
 

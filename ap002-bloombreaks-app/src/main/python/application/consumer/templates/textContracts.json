@@ -1,0 +1,233 @@
+{
+  "promotionRequest": {
+    "type": "object",
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "requestAction": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "userPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "email",
+          "userPassword"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "version"
+        ]
+      }
+    },
+    "required": [
+      "requestId",
+      "timestamp",
+      "requestAction",
+      "data",
+      "metadata"
+    ]
+  },
+  "_comment_telnyx_section": "Everything below this point is dictated by Telnyx, not us - these are reference copies of their documented webhook schemas, not our own contract design. See https://developers.telnyx.com/docs/messaging/messages/receiving-webhooks",
+  "telnyxWebhookEnvelope": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "type": "object",
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "message.received",
+              "message.sent",
+              "message.finalized"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "record_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_type",
+          "id",
+          "occurred_at",
+          "payload"
+        ]
+      },
+      "meta": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "type": "integer"
+          },
+          "delivered_to": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "required": [
+      "data"
+    ]
+  },
+  "telnyxMessageReceivedPayload": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "inbound"
+        ]
+      },
+      "text": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      },
+      "received_at": {
+        "type": "string"
+      },
+      "from": {
+        "type": "object",
+        "properties": {
+          "phone_number": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "line_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_number"
+        ]
+      },
+      "to": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "phone_number": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "from",
+      "text",
+      "direction"
+    ]
+  },
+  "telnyxMessageSentPayload_reference_only": {
+    "type": "object",
+    "properties": {
+      "direction": {
+        "type": "string",
+        "enum": [
+          "outbound"
+        ]
+      },
+      "to": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "phone_number": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "sent"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "_note": "Not actively validated - this app doesn't track message.sent events"
+  },
+  "telnyxMessageFinalizedPayload_reference_only": {
+    "type": "object",
+    "properties": {
+      "direction": {
+        "type": "string",
+        "enum": [
+          "outbound"
+        ]
+      },
+      "to": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "phone_number": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "delivered",
+                "sending_failed",
+                "delivery_failed",
+                "delivery_unconfirmed"
+              ]
+            }
+          }
+        }
+      },
+      "errors": {
+        "type": "array"
+      }
+    },
+    "_note": "Not actively validated - this app doesn't track delivery receipts"
+  }
+}

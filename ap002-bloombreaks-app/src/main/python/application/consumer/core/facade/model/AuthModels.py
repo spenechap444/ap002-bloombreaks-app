@@ -16,7 +16,8 @@ class users(db.Model):
     account_id = db.Column(db.String(64), primary_key=True)
     notifications = db.Column(db.Boolean)
     join_date = db.Column(db.Date, nullable=False)
-    phone_nbr = db.Column(db.String(15))
+    phone_nbr = db.Column(db.String(15), nullable=False,)
+    admin_flag = db.Column(db.String(1), nullable=False) # 'Y' or 'N'
 
 class user_payment_map(db.Model):
     account_id = db.Column(db.String(64), primary_key=True)
