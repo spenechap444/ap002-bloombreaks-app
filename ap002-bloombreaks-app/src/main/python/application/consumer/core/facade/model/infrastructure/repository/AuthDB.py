@@ -41,8 +41,8 @@ class authDB(PostgresDB):
         return p_return_cd_o
 
     def update_user_info(self, user_type): # omitting email from update
-        query = 'CALL account_api_dbo.aip_update_user_info(%s, %s, %s, %s, %s, %s, %s);'
-        params = (user_type.account_id,
+        query = 'CALL account_api_dbo.aip_update_user_info(%s, %s, %s, %s, %s, %s, %s, %s);'
+        params = (user_type.email,
                   user_type.first_name,
                   user_type.last_name,
                   user_type.user_name,
