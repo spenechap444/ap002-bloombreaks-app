@@ -1,5 +1,8 @@
-from flask import Flask
-from application.consumer.core.facade.model.infrastructure.repository.DB import PostgresDB
+import traceback
+
+from flask import Flask, jsonify
+from werkzeug.exceptions import HTTPException
+from application.consumer.core.facade.model.infrastructure.repository.DB import PostgresDB, DatabaseOperationError
 from application.consumer.core.facade.model.infrastructure.configuration import initParams as c
 from application.consumer.AuthConsumer import auth_bp
 from application.consumer.TextConsumer import text_bp
@@ -42,6 +45,29 @@ def create_app(config_name='development'):
     @app.route("/ping")
     def ping():
         return "pong", 200
+
+    @app.errorhandler(DatabaseOperationError)
+    def handle_db_error(e):
+        # A DB failure is the server's problem - report it as one, never as a
+        # 200 "success" or a 401 "bad credentials". 503 = try again later.
+        print(f'Database operation failed: {e}')
+        return jsonify({
+            "status": "error",
+            "message": "Database unavailable - please try again later"
+        }), 503
+
+    @app.errorhandler(Exception)
+    def handle_unexpected(e):
+        # Let real HTTP errors (404, 405, ...) keep their own responses.
+        if isinstance(e, HTTPException):
+            return e
+        # Full stack trace to stdout -> container log -> CloudWatch.
+        traceback.print_exc()
+        # JSON, not Flask's HTML error page - callers do res.json().
+        return jsonify({
+            "status": "error",
+            "message": "Internal server error"
+        }), 500
 
     return app
 

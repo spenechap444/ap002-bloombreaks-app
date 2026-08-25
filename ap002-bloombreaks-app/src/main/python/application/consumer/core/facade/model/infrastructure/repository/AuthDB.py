@@ -11,7 +11,6 @@ class authDB(PostgresDB):
         # ends up in CloudWatch once deployed.
         params = (p_email_i, p_admin_flag_i)
         result = self.fetch_proc(query, params)
-        print(result)
         if isinstance(result, list) and result:
             return result[0] # First row
         else:

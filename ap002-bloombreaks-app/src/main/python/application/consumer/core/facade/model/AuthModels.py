@@ -19,16 +19,6 @@ class users(db.Model):
     phone_nbr = db.Column(db.String(15), nullable=False)
     admin_flag = db.Column(db.String(1), nullable=False) # 'Y' or 'N'
 
-class user_payment_map(db.Model):
-    account_id = db.Column(db.String(64), primary_key=True)
-    card_id = db.Column(db.String(64), primary_key=True)
-    card_nbr = db.Column(db.String(15), nullable=False)
-    card_name = db.Column(db.String(50), nullable=False)
-    card_provider = db.Column(db.String(30), nullable=False)
-    security_cd = db.Column(db.Integer, nullable=False)
-    exp_date = db.Column(db.Date, nullable=False) # double check on this
-    active_ind = db.Column(db.Boolean, nullable=False) # double check on this
-
 class user_address_map(db.Model):
     account_id = db.Column(db.String(64), primary_key=True)
     user_address = db.Column(db.String(300), primary_key=True)
