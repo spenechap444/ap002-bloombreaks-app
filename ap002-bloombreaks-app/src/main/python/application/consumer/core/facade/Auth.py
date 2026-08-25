@@ -49,7 +49,7 @@ class AuthService(BaseService):
             security_cd += str(random.randint(0, 9))
         #store security code against email
         email_cd_mapping[f_request.data.email] = security_cd
-        email = Email('snchapman4@gmail.com')
+        email = Email('BloomsHobbyShop@gmail.com')
         email_body = email.craft_validation_msg(security_cd)
         email.send_mail(p_recip_i=f_request.data.email,
                         p_subject_i='Bloombreaks email validation',
@@ -90,25 +90,15 @@ class AuthService(BaseService):
         user.account_id = generate_password_hash(user.email)
         return_cd = self.db.store_new_user(user)
         return return_cd
-
-# facade
-class AuthServiceV1:
-    def __init__(self, db):
-        self.db = db
-
-    def register(self, username, password):
-        if User.query.filter_by(username=username).first():
-            return None, "User already exists."
-
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=username, password_hash=hashed_password)
-
-        self.db.session.add(new_user)
-        self.db.session.commit()
-        return new_user, None
-
-    def login(self, username, password):
-        user = User.query.filter_by(username).first()  # replace with fetch procedure
-        if not user or not check_password_hash(user.password_hash, password):
-            return None, "Invalid username or password"
-        return user, None
+    
+    def update_user_info(self, updateRequest):
+        f_request = self._dict_to_namespace(updateRequest)
+        user = users(email=f_request.data.email,
+                     first_name=f_request.data.firstName,
+                     last_name=f_request.data.lastName,
+                     user_name=f_request.data.userName,
+                     bio=f_request.data.bio,
+                     notifications=f_request.data.notifications,
+                     phone_nbr=f_request.data.phoneNbr)
+        return_cd = self.db.update_user_info(user)
+        return return_cd

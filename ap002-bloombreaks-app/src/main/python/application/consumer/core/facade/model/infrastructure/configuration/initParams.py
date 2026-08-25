@@ -7,7 +7,6 @@ class Config:
     def __init__(self):
         self.db_creds = self.parse_creds()
 
-    SECRET_KEY = 'XX'
     database_config = {}
 
     def parse_creds(self):
@@ -17,14 +16,14 @@ class Config:
         )
         parser.add_argument('--host', type=str)
         parser.add_argument('--port', type=str)
-        parser.add_argument('--db_username', type=str, help='Database username')
-        parser.add_argument('--db_password', type=str, help='Database password')
         args = parser.parse_args()
 
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as f:
             db_creds = json.load(f)['DB']
-            db_creds['user'] = args.db_username
-            db_creds['password'] = args.db_password
+        
+        db_creds['user'] = os.environ['DB_USERNAME']
+        db_creds['password'] = os.environ['DB_PASSWORD']
+
 
         return db_creds
 

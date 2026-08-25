@@ -54,7 +54,7 @@ def main():
     p.add_argument('--url', default='https://sinner-booted-unpainted.ngrok-free.dev/text/promotion')
     p.add_argument('--email', default='bloomshobbyshop@gmail.com', help='Login email (must exist in the DB)')
     p.add_argument('--password', help='Login password for that user')
-    p.add_argument('--message', default='Test promotional message... it is beginning...',
+    p.add_argument('--message', default='Test promotional message #2',
                    help='The SMS body sent to every active subscriber')
     args = p.parse_args()
 

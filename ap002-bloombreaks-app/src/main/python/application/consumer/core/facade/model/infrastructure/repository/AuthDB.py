@@ -47,7 +47,9 @@ class authDB(PostgresDB):
                   user_type.last_name,
                   user_type.user_name,
                   user_type.bio,
-                  user_type.notifications)
+                  user_type.notifications,
+                  user_type.phone_nbr,
+                  'N') # defaulting admin_flag to 'N'
 
         p_return_cd_o = self.store_proc(query, params)
 
