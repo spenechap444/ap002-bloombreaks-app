@@ -52,6 +52,78 @@
       "metadata"
     ]
   },
+  "updateUserInfoRequest": {
+    "type": "object",
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "requestAction": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "firstName": {
+            "type": ["string", "null"]
+          },
+          "lastName": {
+            "type": ["string", "null"]
+          },
+          "userName": {
+            "type": ["string", "null"]
+          },
+          "bio": {
+            "type": ["string", "null"]
+          },
+          "notifications": {
+            "type": ["boolean", "null"]
+          },
+          "phoneNbr": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "email",
+          "firstName",
+          "lastName",
+          "userName",
+          "bio",
+          "notifications"
+        ]
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "version"
+        ]
+      }
+    },
+    "required": [
+      "requestId",
+      "timestamp",
+      "requestAction",
+      "data",
+      "metadata"
+    ]
+  },
   "emailDupCheck": {
     "type": "object",
     "properties": {
