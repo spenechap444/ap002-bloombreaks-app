@@ -5,6 +5,8 @@ import time
 import logging
 from contextlib import contextmanager
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseOperationError(Exception):
     """Raised when a query still fails after every retry.
@@ -40,8 +42,8 @@ class PostgresDB:
                                                    **cnn)
             except psycopg2.DatabaseError as e:
                 last_error = e
-                print(f'Database error opening conn pool (attempt {attempts}/{max_retries}): {e}')
-                #logging.exception(f'Database error encountered: {e}')
+                logger.error('Database error opening conn pool (attempt %d/%d): %s',
+                             attempts, max_retries, e)
                 time.sleep(10)
                 attempts += 1
         # Fail FAST instead of returning None: a worker that cannot reach the
@@ -63,6 +65,53 @@ class PostgresDB:
         return cls.connection_pool is not None
 
     @classmethod
+    def health_check(cls, statement_timeout_ms=2000):
+        """Round-trip a trivial query. Returns (ok: bool, detail: str).
+
+        Deliberately does NOT go through fetch_proc. That path retries five
+        times with a 10s sleep between attempts, so an unreachable database
+        would hold the request ~50s and the load balancer would give up long
+        before getting an answer. A health check makes exactly one attempt and
+        answers immediately, either way.
+        """
+        if cls.connection_pool is None:
+            return False, 'connection pool not initialized'
+
+        try:
+            cls._ensure_pool_for_this_process()
+        except Exception as e:
+            return False, f'pool rebuild failed: {type(e).__name__}: {e}'
+
+        conn = None
+        broken = False
+        try:
+            conn = cls.connection_pool.getconn()
+            with conn.cursor() as cursor:
+                # Bound the query so a hung backend fails the check instead of
+                # hanging the worker. LOCAL = scoped to this transaction, so it
+                # cannot leak onto the next borrower of this connection.
+                cursor.execute(f"SET LOCAL statement_timeout = {int(statement_timeout_ms)};")
+                cursor.execute('SELECT 1;')
+                row = cursor.fetchone()
+            if row != (1,):
+                return False, f'unexpected response to SELECT 1: {row!r}'
+            # End the implicit transaction so the connection returns to the
+            # pool idle rather than idle-in-transaction.
+            conn.rollback()
+            return True, 'ok'
+        except Exception as e:
+            broken = True
+            return False, f'{type(e).__name__}: {e}'
+        finally:
+            if conn is not None:
+                try:
+                    # close=True on failure: discard a suspect connection rather
+                    # than handing it to the next caller.
+                    cls.connection_pool.putconn(conn, close=broken)
+                except Exception as e:
+                    logger.error('health_check: failed to return connection to pool: %s', e)
+
+    @classmethod
     def _ensure_pool_for_this_process(cls):
         # Fork guard: a pool created before a fork leaves parent and children
         # sharing the same sockets -> interleaved responses, protocol errors.
@@ -70,8 +119,8 @@ class PostgresDB:
         # Deliberately do NOT close the inherited connections here: closing
         # them from the child would tear down the parent's sockets too.
         if cls.connection_pool is not None and cls._pool_pid != os.getpid():
-            print(f'Connection pool was built in pid {cls._pool_pid}; '
-                  f'rebuilding for pid {os.getpid()}')
+            logger.info('Connection pool was built in pid %s; rebuilding for pid %s',
+                        cls._pool_pid, os.getpid())
             cls.connection_pool = cls.create_connection_pool(cls._pool_creds)
             cls._pool_pid = os.getpid()
 
@@ -84,8 +133,7 @@ class PostgresDB:
         conn = self.connection_pool.getconn()
         broken = False
         try:
-            print("Acquiring connection pool thread")
-            # logging.info("Acquiring connection pool thread")
+            logger.debug('Acquired connection from pool')
             yield conn
         except Exception:
             # Roll back the failed transaction BEFORE the connection goes back
@@ -111,15 +159,13 @@ class PostgresDB:
                     return cursor.fetchall()
             except psycopg2.DatabaseError as e:
                 last_error = e
-                print(f'Database error encountered when fetching data for {query} and {params}: {e}')
+                logger.warning('Database error fetching %s with %s: %s', query, params, e)
                 time.sleep(10)
-                # logging.exception(f'Database error encountered when fetching data for {query} and {params}: {e}')
                 attempts+=1
             except Exception as e:
                 last_error = e
-                print(f'Unexpected error encountered when fetching data for {query} and {params}: {e}')
+                logger.warning('Unexpected error fetching %s with %s: %s', query, params, e)
                 time.sleep(10)
-                # logging.exception(f'Database error encountered when fetching data for {query} and {params}: {e}')
                 attempts+=1
 
         # Raise instead of returning a sentinel: a silent 1 here is how DB
@@ -136,20 +182,21 @@ class PostgresDB:
                 with self.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute(query, params)
-                    cursor.commit()  # Commit the transaction after successful execution
+                    # conn.commit(), not cursor.commit() - psycopg2 cursors have
+                    # no commit(); the AttributeError was being swallowed by the
+                    # generic except below and retried as if it were a DB fault.
+                    conn.commit()
                     return 0 # success
             except psycopg2.DatabaseError as e:
                 last_error = e
-                print(f'Database error encountered for {query} and {params}: {e}')
-                # logging.exception(f'Database error encountered for {query} and {params}: {e}')
+                logger.warning('Database error storing %s with %s: %s', query, params, e)
                 time.sleep(10)
                 attempts+=1
 
             except Exception as e:
                 last_error = e
-                print(f'Unexpected error encountered for {query} and {params}: {e}')
+                logger.warning('Unexpected error storing %s with %s: %s', query, params, e)
                 time.sleep(10)
-                # logging.exception(f'Unexpected error encountered for {query} and {params}: {e}')
                 attempts+=1
 
         raise DatabaseOperationError(

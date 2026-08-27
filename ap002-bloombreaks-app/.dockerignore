@@ -1,0 +1,26 @@
+# Patterns are relative to the build context, which is now the project root.
+# A bare ".env" would only match one at the root - the real file lives at
+# src/main/python/.env, so these MUST be recursive or secrets get baked in.
+**/.env
+**/.env.*
+
+# Python build noise
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+.venv/
+venv/
+
+# Not needed at runtime - the image runs gunicorn, not the test suite
+tests/
+
+# Editor / OS cruft
+.idea/
+.vscode/
+**/.DS_Store
+
+# Docker + VCS
+.git/
+.gitignore
+Dockerfile
+.dockerignore

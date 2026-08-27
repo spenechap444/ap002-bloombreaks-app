@@ -1,7 +1,3 @@
-import sys, os
-print("PYTHON:", sys.executable)
-print("PATHS:", os.linesep.join(sys.path))
-
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()

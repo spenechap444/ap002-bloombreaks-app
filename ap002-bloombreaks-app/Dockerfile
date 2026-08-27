@@ -1,3 +1,6 @@
+# Build context is the project root (the folder holding src/ and tests/),
+# NOT src/main/python. Elastic Beanstalk bundles from the project root and
+# looks for the Dockerfile there, so every path below is root-relative.
 FROM python:3.9-slim
 
 # 1. System deps for psycopg2
@@ -15,14 +18,19 @@ ENV FLASK_ENV=${FLASK_ENV} \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-WORKDIR /app/src/main/python
+# The app is flattened into /app: the src/main/python nesting is a source-tree
+# convention and carries no meaning inside the image.
+WORKDIR /app
 
 #4. Install Python deps
-COPY requirements.txt .
+#   Copied on its own first so a code change doesn't bust the pip layer cache.
+COPY src/main/python/requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 #5. Copy code
-COPY . .
+#   Trailing slash on the source copies the directory's *contents* into /app,
+#   so main.py, wsgi.py and application/ sit at the WORKDIR root.
+COPY src/main/python/ .
 
 # Guard: COPY preserves host file modes and lands files owned by root.
 # A 0600 file on the Mac would be unreadable by appuser at import time.

@@ -2,8 +2,11 @@ from flask import Blueprint, render_template, request, jsonify
 from jsonschema import validate, ValidationError
 from application.consumer.core.facade.Auth import AuthService
 from application.consumer.core.facade.model.infrastructure.repository.AuthDB import authDB
+import logging
 import os
 import json
+
+logger = logging.getLogger(__name__)
 
 # Create a blueprint for authentication-related routes
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -122,7 +125,7 @@ def fetch_auth():
 
     try:
         validate(instance=payload, schema=contract_template.get('loginRequest'))
-        print('Login request validated successfully..')
+        logger.debug('Login request validated successfully')
     except ValidationError as ve:
         return jsonify({"status": "error",
             "message": "Invalid JSON format",

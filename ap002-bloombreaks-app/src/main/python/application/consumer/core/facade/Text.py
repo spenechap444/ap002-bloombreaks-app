@@ -1,4 +1,5 @@
 import telnyx
+import logging
 import os
 import base64
 import time
@@ -6,6 +7,8 @@ from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from application.consumer.core.facade.Base import BaseService
 from application.consumer.core.facade.model.TextModels import text_subscribers
+
+logger = logging.getLogger(__name__)
 
 # should be in startup logic not in class declaration
 telnyx.api_key = os.environ['TELNYX_API_KEY']
@@ -20,12 +23,12 @@ class TextService(BaseService):
         # Confirms a webhook actually came from Telnyx (Ed25519), not a forged
         # request hitting our public endpoint. Must run BEFORE we trust the payload.
         if not signature_header or not timestamp_header:
-            print('Telnyx webhook rejected: missing signature headers')
+            logger.warning('Telnyx webhook rejected: missing signature headers')
             return False
 
         try:
             if abs(time.time() - int(timestamp_header)) > tolerance_seconds:
-                print('Telnyx webhook rejected: timestamp outside tolerance window')
+                logger.warning('Telnyx webhook rejected: timestamp outside tolerance window')
                 return False
 
             verify_key = VerifyKey(base64.b64decode(self.public_key))
@@ -36,7 +39,7 @@ class TextService(BaseService):
             verify_key.verify(signed_payload, base64.b64decode(signature_header))
             return True
         except (BadSignatureError, ValueError, TypeError) as e:
-            print(f'Telnyx webhook signature verification failed: {e}')
+            logger.warning('Telnyx webhook signature verification failed: %s', e)
             return False
 
     def subscribe(self, phone_number):
@@ -67,13 +70,14 @@ class TextService(BaseService):
         # Zero subscribers is the silent-failure trap: without this log an empty
         # fetch (no active rows, or a NULL admin_flag filtering everything out)
         # looks identical to a real send.
-        print(f'Fetched {len(subscribers)} active subscriber(s) for promotion')
+        logger.info('Fetched %d active subscriber(s) for promotion', len(subscribers))
         if not subscribers:
             return False, 'No active subscribers found - nothing sent'
         failed = []
         for number in subscribers:
             try:
-                print(f'Sending promotion to {number}: {f_request.data.message}')
+                logger.info('Sending promotion to %s', number)
+                logger.debug('Promotion body: %s', f_request.data.message)
                 client = telnyx.Telnyx(api_key=telnyx.api_key)
                 response = client.messages.send(
                     from_=self.from_number,
@@ -81,7 +85,7 @@ class TextService(BaseService):
                     text=f_request.data.message
                 )
             except Exception as e:
-                print(f'Telnyx error sending to {number}: {e}')
+                logger.error('Telnyx error sending to %s: %s', number, e)
                 failed.append(number)
 
         if failed:
@@ -99,12 +103,12 @@ class TextService(BaseService):
             # (delivered / sending / delivery_failed); 'errors' has the reason codes.
             raw = webhook_payload['data']['payload']
             for recipient in raw.get('to', []):
-                print(f"{event_type}: to={recipient.get('phone_number')} "
-                      f"status={recipient.get('status')}")
+                logger.info('%s: to=%s status=%s', event_type,
+                            recipient.get('phone_number'), recipient.get('status'))
             if raw.get('errors'):
-                print(f'{event_type} errors: {raw["errors"]}')
+                logger.error('%s errors: %s', event_type, raw['errors'])
         else:
-            print(f'Unhandled Telnyx event type: {event_type}')
+            logger.info('Unhandled Telnyx event type: %s', event_type)
 
     def _handle_inbound(self, f_payload):
         # Telnyx only ever hits this one webhook endpoint, so all keyword-based
@@ -114,20 +118,20 @@ class TextService(BaseService):
         from_number = getattr(f_payload.data.payload, 'from').phone_number
         raw_text = f_payload.data.payload.text.strip()
         message_body = raw_text.upper()
-        print(f'Inbound SMS from {from_number}: {message_body}')
+        logger.info('Inbound SMS from %s: %s', from_number, message_body)
 
         if message_body == 'YES':
             success, msg = self.subscribe(from_number)
-            print(f'Subscribe result for {from_number}: {success} - {msg}')
+            logger.info('Subscribe result for %s: %s - %s', from_number, success, msg)
         elif message_body == 'STOP':
             success, msg = self.unsubscribe(from_number)
-            print(f'Unsubscribe result for {from_number}: {success} - {msg}')
+            logger.info('Unsubscribe result for %s: %s - %s', from_number, success, msg)
         elif message_body.startswith('PROMO'):
             # Pass raw_text, not the uppercased copy - the promotion message
             # should go out with its original casing.
             self._handle_admin_promo(from_number, raw_text)
         else:
-            print(f'No matching keyword for "{message_body}" from {from_number} - ignoring')
+            logger.info('No matching keyword for %r from %s - ignoring', message_body, from_number)
 
     # TODO: This can be deleted if promotion feature is built and this is forgotten
     # def _validate_admin(self, payload):
@@ -164,16 +168,16 @@ class TextService(BaseService):
             is_admin = True if number == from_number else is_admin
 
         if not is_admin:
-            print(f'PROMO rejected: {from_number} is not an admin')
+            logger.warning('PROMO rejected: %s is not an admin', from_number)
             return
         pin = os.environ.get('ADMIN_SMS_PIN')
         parts = raw_text.split(maxsplit=2)  # ["PROMO", "<pin>", "<message>"]
         if not pin:
-            print('PROMO rejected: ADMIN_SMS_PIN is not configured')
+            logger.error('PROMO rejected: ADMIN_SMS_PIN is not configured')
             return
         if len(parts) < 3 or parts[1] != pin:
-            print(f'PROMO rejected: bad or missing PIN from {from_number}')
+            logger.warning('PROMO rejected: bad or missing PIN from %s', from_number)
             return
 
         success, msg = self.send_promotion({'data': {'message': parts[2]}})
-        print(f'Admin promo from {from_number}: {success} - {msg}')
+        logger.info('Admin promo from %s: %s - %s', from_number, success, msg)

@@ -2,7 +2,10 @@ from application.consumer.core.facade.model.AuthModels import users
 from application.consumer.core.facade.model.infrastructure.utils.emailUtil import Email
 from werkzeug.security import generate_password_hash, check_password_hash
 from application.consumer.core.facade.Base import BaseService
+import logging
 import random
+
+logger = logging.getLogger(__name__)
 
 class AuthService(BaseService):
     def __init__(self, db):
@@ -26,19 +29,19 @@ class AuthService(BaseService):
         if admin_check:
             admin_flag = user_cred[10]
             if admin_flag != 'Y':
-                print(f'Admin login rejected for {user_email} - not an admin')
+                logger.info('Admin login rejected for %s - not an admin', user_email)
                 return None, 'User is not an admin'
             else:
-                print(f'Admin login accepted for {user_email}')
+                logger.info('Admin login accepted for %s', user_email)
 
         if check_password_hash(user_password, user.user_password):
-            print('Password checks out')
+            logger.debug('Password check passed')
             return user, None
 
         elif user.email != user_email:
-            print('Email checks out')
+            logger.debug('Email matched but password did not')
             return None, 'Invalid email'
-        print('Nothing checks out')
+        logger.debug('Neither email nor password matched')
         return None, 'Invalid password'
 
     #produces an email
@@ -69,12 +72,12 @@ class AuthService(BaseService):
     def email_dup_check(self, email_request):
         f_request = self._dict_to_namespace(email_request)
         user = users(email=f_request.data.email)
-        print(f'User email checking for duplicate: {user.email}')
+        logger.debug('Checking for duplicate email: %s', user.email)
         user_cred = self.db.fetch_user(user.email)
         if user_cred is None:
-            print('No existing email found.')
+            logger.debug('No existing email found')
             return False, 'No existing email found'
-        print(f'Email {user.email} already exists')
+        logger.info('Registration attempted with existing email: %s', user.email)
         return True, 'Email already existing'
 
     def rm_security_cd(self, cancel_request, email_cd_mapping):
