@@ -120,7 +120,7 @@ class TextService(BaseService):
         message_body = raw_text.upper()
         logger.info('Inbound SMS from %s: %s', from_number, message_body)
 
-        if message_body == 'YES':
+        if message_body == 'START':
             success, msg = self.subscribe(from_number)
             logger.info('Subscribe result for %s: %s - %s', from_number, success, msg)
         elif message_body == 'STOP':
