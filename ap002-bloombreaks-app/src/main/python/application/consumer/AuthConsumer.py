@@ -151,36 +151,36 @@ def fetch_auth():
             "message": "Invalid credentials"
         }), 401
     
-@auth_bp.route('/update_user_info', methods=['POST'])
-def update_user_info():
-    payload = request.get_json()
-    if not payload:
-        return jsonify({
-            "status": "error",
-            "message": "Missing JSON payload"
-        }), 400
+# @auth_bp.route('/update_user_info', methods=['POST'])
+# def update_user_info():
+#     payload = request.get_json()
+#     if not payload:
+#         return jsonify({
+#             "status": "error",
+#             "message": "Missing JSON payload"
+#         }), 400
 
-    # Validate the payload against the template
-    try:
-        validate(instance=payload, schema=contract_template['updateUserInfoRequest'])
-    except ValidationError as ve:
-        return jsonify({
-            "status": "error",
-            "message": "Invalid JSON format",
-            "error": str(ve)
-        }), 400
+#     # Validate the payload against the template
+#     try:
+#         validate(instance=payload, schema=contract_template['updateUserInfoRequest'])
+#     except ValidationError as ve:
+#         return jsonify({
+#             "status": "error",
+#             "message": "Invalid JSON format",
+#             "error": str(ve)
+#         }), 400
 
-    db = authDB()
-    auth = AuthService(db)
-    p_return_cd_o = auth.update_user_info(payload)
+#     db = authDB()
+#     auth = AuthService(db)
+#     p_return_cd_o = auth.update_user_info(payload)
 
-    if p_return_cd_o == 0:
-        return jsonify({
-            "status": "success",
-            "message": "User info updated successfully"
-        }), 200
-    else:
-        return jsonify({
-            "status": "error",
-            "message": f"Failed to update user info, return code: {p_return_cd_o}"
-        }), 500
+#     if p_return_cd_o == 0:
+#         return jsonify({
+#             "status": "success",
+#             "message": "User info updated successfully"
+#         }), 200
+#     else:
+#         return jsonify({
+#             "status": "error",
+#             "message": f"Failed to update user info, return code: {p_return_cd_o}"
+#         }), 500
