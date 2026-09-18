@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 # Create a blueprint for authentication-related routes
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
-contract_template = open(os.path.join(os.path.dirname(__file__), 'templates/authContracts.json'))
 with open(os.path.join(os.path.dirname(__file__), 'templates/authContracts.json')) as f:
     contract_template = json.load(f)
 
