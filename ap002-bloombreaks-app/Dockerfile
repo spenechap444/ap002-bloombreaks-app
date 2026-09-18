@@ -48,5 +48,6 @@ HEALTHCHECK --interval=30s --timeout=5s \
 CMD ["gunicorn", "wsgi:application", \
      "--workers", "3", \
      "--bind", "0.0.0.0:8000", \
+     "--timeout", "60", \
      "--access-logfile", "-", \
      "--error-logfile", "-"]

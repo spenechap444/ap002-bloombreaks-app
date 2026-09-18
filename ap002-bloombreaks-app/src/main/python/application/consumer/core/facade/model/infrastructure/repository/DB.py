@@ -30,7 +30,7 @@ class PostgresDB:
     @classmethod
     def create_connection_pool(cls, cnn, minconn=1, maxconn=10):
         attempts = 1
-        max_retries = 10
+        max_retries = 5
         last_error = None
         while attempts <= max_retries:
             try:
