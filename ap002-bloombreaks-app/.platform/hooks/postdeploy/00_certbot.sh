@@ -6,4 +6,4 @@ if [ ! -x /opt/certbot/bin/certbot ]; then
   ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 fi
 certbot -n --nginx -d api.bloom55breaks.com --agree-tos \
-  --email you@example.com --keep-until-expiring --redirect
+  --email bloomshobbyshop@gmail.com --keep-until-expiring --redirect
