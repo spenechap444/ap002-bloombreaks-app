@@ -23,14 +23,14 @@ class PostgresDB:
     _pool_pid = None
     _pool_creds = None
 
-    def __init__(self, timeout=30, max_retries=5):
+    def __init__(self, timeout=30, max_retries=3):
         self.timeout = timeout
         self.max_retries = max_retries
 
     @classmethod
     def create_connection_pool(cls, cnn, minconn=1, maxconn=10):
         attempts = 1
-        max_retries = 5
+        max_retries = 3
         last_error = None
         while attempts <= max_retries:
             try:

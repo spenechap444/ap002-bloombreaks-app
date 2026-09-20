@@ -1,4 +1,13 @@
-from application.consumer.core.facade.model.infrastructure.repository.DB import PostgresDB
+import logging
+
+import psycopg2
+
+from application.consumer.core.facade.model.infrastructure.repository.DB import (
+    PostgresDB,
+    DatabaseOperationError,
+)
+
+logger = logging.getLogger(__name__)
 
 class textDB(PostgresDB):
     def __init__(self, timeout=30, max_retries=5):
@@ -39,3 +48,46 @@ class textDB(PostgresDB):
         p_return_cd_o = self.store_proc(query, params)
 
         return p_return_cd_o
+
+    # --- Telnyx webhook idempotency -------------------------------------------
+    # These two deliberately make ONE attempt and do not go through
+    # fetch_proc/store_proc. Those retry with 10s sleeps, which would hold the
+    # webhook response past Telnyx's timeout - the exact thing that causes
+    # redeliveries. Failing fast is correct here: the handler returns 503 and
+    # Telnyx retries the event later on its own schedule.
+
+    def claim_webhook_event(self, event_id, event_type):
+        """Record a Telnyx event ID. Returns True if this is the first time we've
+        seen it (process it), False if it was already recorded (a redelivery).
+
+        fetch_proc can't be used for this even ignoring the retries: it never
+        commits, so the claim row would never become visible to a retry.
+        """
+        query = 'SELECT records_api_dbo.aip_claim_webhook_event(%s, %s);'
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (event_id, event_type))
+                    claimed = cursor.fetchone()[0]
+                conn.commit()
+            return bool(claimed)
+        except psycopg2.Error as e:
+            raise DatabaseOperationError(
+                f'could not claim webhook event {event_id}') from e
+
+    def release_webhook_event(self, event_id):
+        """Undo a claim after processing failed, so Telnyx's retry of the same
+        event gets processed instead of skipped. Best effort: a failure here is
+        logged, not raised, because the caller is already handling an error.
+        """
+        query = 'SELECT records_api_dbo.aip_release_webhook_event(%s);'
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (event_id,))
+                conn.commit()
+        except Exception as e:
+            # If this fails, the retry will be treated as a duplicate and the
+            # event is lost - log loudly enough to find it in CloudWatch.
+            logger.error('Could not release webhook event %s - a Telnyx retry '
+                         'of it will be skipped: %s', event_id, e)

@@ -3,6 +3,7 @@ import logging
 import os
 import base64
 import time
+from concurrent.futures import ThreadPoolExecutor
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from application.consumer.core.facade.Base import BaseService
@@ -12,6 +13,19 @@ logger = logging.getLogger(__name__)
 
 # should be in startup logic not in class declaration
 telnyx.api_key = os.environ['TELNYX_API_KEY']
+
+# Promo broadcasts run here, off the request thread, so the webhook can answer
+# Telnyx immediately. Sending inline took a few hundred ms per subscriber; once
+# that outlasted Telnyx's webhook timeout, Telnyx redelivered the same PROMO
+# event and the whole list got the broadcast again.
+# max_workers=1: broadcasts from this worker process run one at a time rather
+# than in parallel, which keeps the send rate to Telnyx predictable.
+# Each gunicorn worker gets its own executor (threads start lazily on first
+# submit, so nothing is shared across the fork).
+# Limitation: a broadcast in flight dies if the worker is killed (deploy,
+# crash). A durable queue (SQS + worker) is the upgrade path if that matters.
+_broadcast_executor = ThreadPoolExecutor(max_workers=1,
+                                         thread_name_prefix='promo-broadcast')
 
 class TextService(BaseService):
     def __init__(self, db):
@@ -95,9 +109,28 @@ class TextService(BaseService):
     def handle_webhook(self, webhook_payload):
         f_payload = self._dict_to_namespace(webhook_payload)
         event_type = f_payload.data.event_type
+        event_id = f_payload.data.id
 
         if event_type == 'message.received':
-            self._handle_inbound(f_payload)
+            # Telnyx redelivers any event it didn't get a timely 2xx for - a slow
+            # response, a 5xx, a dropped connection mid-deploy, or a 200 lost on
+            # the way back. Claiming the event ID first makes a redelivery a
+            # no-op instead of a second subscribe/broadcast.
+            # Only inbound messages are claimed: they're the only events with
+            # side effects. Delivery-status events just log, so a duplicate of
+            # one is harmless and not worth a DB write per recipient.
+            if not self.db.claim_webhook_event(event_id, event_type):
+                logger.info('Duplicate Telnyx event %s (%s) - already handled, skipping',
+                            event_id, event_type)
+                return
+            try:
+                self._handle_inbound(f_payload)
+            except Exception:
+                # Processing failed, so this delivery gets a 5xx and Telnyx will
+                # retry it. Release the claim or that retry would be skipped as a
+                # duplicate and the text silently lost.
+                self.db.release_webhook_event(event_id)
+                raise
         elif event_type in ('message.sent', 'message.finalized'):
             # Delivery-status events. 'to[].status' is the carrier's verdict
             # (delivered / sending / delivery_failed); 'errors' has the reason codes.
@@ -179,5 +212,19 @@ class TextService(BaseService):
             logger.warning('PROMO rejected: bad or missing PIN from %s', from_number)
             return
 
-        success, msg = self.send_promotion({'data': {'message': parts[2]}})
-        logger.info('Admin promo from %s: %s - %s', from_number, success, msg)
+        # Hand the send loop to the background executor and return, so the
+        # webhook answers Telnyx right away. Everything above (admin lookup, PIN
+        # check) stays inline: it's fast, and if it fails the webhook 5xxs and
+        # Telnyx retries - which is what we want for a failure that happened
+        # before anything was sent.
+        _broadcast_executor.submit(self._run_broadcast, from_number, parts[2])
+        logger.info('Admin promo from %s accepted - broadcasting in background', from_number)
+
+    def _run_broadcast(self, from_number, message):
+        # Runs on the executor thread. Exceptions here would otherwise vanish
+        # into an unread Future, so log them with the traceback.
+        try:
+            success, msg = self.send_promotion({'data': {'message': message}})
+            logger.info('Admin promo from %s finished: %s - %s', from_number, success, msg)
+        except Exception:
+            logger.exception('Admin promo broadcast from %s crashed', from_number)
